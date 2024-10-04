@@ -272,7 +272,7 @@ io.on('connection', (socket) => {
         id,
         { $pull: { hasNotOpen: userId } },
         { new: true }
-      )
+      ).populate(['collaborators'])
       io.to(id).emit('channel-updated', updatedChannel)
     }
   })
@@ -283,7 +283,7 @@ io.on('connection', (socket) => {
         id,
         { $pull: { hasNotOpen: userId } },
         { new: true }
-      )
+      ).populate(['collaborators'])
       io.to(id).emit('convo-updated', updatedConversation)
     }
   })
@@ -371,7 +371,7 @@ io.on('connection', (socket) => {
             channelId,
             { hasNotOpen },
             { new: true }
-          )
+          ).populate(['collaborators'])
 
           io.to(channelId).emit('channel-updated', updatedChannel)
           socket.broadcast.emit('notification', {
@@ -429,7 +429,7 @@ io.on('connection', (socket) => {
             conversationId,
             { hasNotOpen },
             { new: true }
-          )
+          ).populate(['collaborators'])
           io.to(conversationId).emit('convo-updated', updatedConversation)
           socket.broadcast.emit('notification', {
             collaborators,
@@ -446,15 +446,19 @@ io.on('connection', (socket) => {
   )
 
   socket.on('message-view', async (messageId, userId) => {
-    const message = await Message.findByIdAndUpdate(
-      messageId ,
-      { $pull : { unreadmember: userId } }
-    )
-    if (message) {
-      io.emit('message-viewed', message)
-    } else {
-      console.log('メッセージが見つかりません')
+    if(messageId && mongoose.Types.ObjectId.isValid(messageId)){
+      socket.join(messageId)
+      const message = await Message.findByIdAndUpdate(
+        messageId ,
+        { $pull : { unreadmember: userId } }
+      )
+      if (message) {
+        io.emit('message-viewed', message)
+      } else {
+        console.log('メッセージが見つかりません')
+      }
     }
+    
   })
 
   socket.on('message-delete', async ({ messageId, channelId, userId, isThread }) => {

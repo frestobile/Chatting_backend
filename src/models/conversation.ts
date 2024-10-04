@@ -21,7 +21,8 @@ const conversationSchema = new mongoose.Schema<ConversationSchemaType>(
       type: String,
       default() {
         if (this.createdBy) {
-          return this.createdBy.username
+          // return this.createdBy.username
+          return this.name
         }
         return ''
       },
